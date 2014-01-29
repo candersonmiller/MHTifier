@@ -19,6 +19,8 @@ import os
 import quopri
 import sys
 import argparse
+import os.path
+import codecs
 
 # Just do it.
 def main():
@@ -54,7 +56,8 @@ def main():
 
 	# New directory?
 	if args.unpack:
-		os.mkdir(args.d)
+		if not os.path.exists(args.d):
+			os.mkdir(args.d)
 
 	# Change directory so paths (content-location) are relative to index.html.
 	os.chdir(args.d)
@@ -65,7 +68,10 @@ def main():
 			sys.stderr.write("Unpacking...\n")
 
 		# Read entire MHT archive -- it's a multipart(/related) message.
-		a = email.message_from_bytes(mht.read()) # Parser is "conducive to incremental parsing of email messages, such as would be necessary when reading the text of an email message from a source that can block", so I guess it's more efficient to have it read stdin directly, rather than buffering.
+		text = mht.read()
+		if text.startswith( codecs.BOM_UTF8 ):
+			text = text[3:]
+		a = email.message_from_string(text) # Parser is "conducive to incremental parsing of email messages, such as would be necessary when reading the text of an email message from a source that can block", so I guess it's more efficient to have it read stdin directly, rather than buffering.
 
 		# Save all parts to files.
 		for p in a.get_payload(): # walk() for a tree, but I'm guessing MHT is never nested?
@@ -77,8 +83,8 @@ def main():
 				sys.stderr.write("Writing %s to %s, %d bytes...\n" % (ct, fp, len(p.get_payload())))
 
 			# Create directories as necessary.
-			if os.path.dirname(fp):
-				os.makedirs(os.path.dirname(fp), exist_ok=True)
+			if os.path.dirname(fp) and not os.path.exists(os.path.dirname(fp)):
+				os.makedirs(os.path.dirname(fp))
 
 			# Save part's body to a file.
 			open(fp, "wb").write(p.get_payload(decode=True))
