@@ -127,7 +127,9 @@ def main():
 
 		# Write MHT file.
 		#??? verify index.html is present!?
-		mht.write(bytes(a.as_string(unixfrom=False), "utf-8")) # Not an mbox file, so we don't need to mangle "From " lines, I guess?
+		#mht.write(bytes(a.as_string(unixfrom=False), "utf-8")) # Not an mbox file, so we don't need to mangle "From " lines, I guess?
+		mht.write(a.as_string())
+
 
 		if not args.quiet:
 			sys.stderr.write("Done.\nPacked %d files.\n" % (len(a.get_payload())))
